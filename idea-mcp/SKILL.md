@@ -69,4 +69,4 @@ python ...\idea_mcp.py get_console_output '{}'
 - One debug session at a time from this skill; pass `sessionId` explicitly when several exist.
 - Mutating VCS / remote-state tools (`vcs_push`, `merge_*`, `update_*`, `create_pull_request`, …) need explicit user approval per call; never batch them silently.
 - The wrapper prints tool errors as JSON — surface the message instead of retrying blindly. Stop after 3 consecutive failures of the same call and report back.
-- Local-only: the endpoint (`127.0.0.1:64342`) and the wrapper never leave this machine; do not expose them or commit credentials alongside this skill.
+- Local-only: the endpoint (`127.0.0.1:64515`) and the wrapper never leave this machine; do not expose them or commit credentials alongside this skill.

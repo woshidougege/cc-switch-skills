@@ -20,7 +20,7 @@ import sys
 import urllib.request
 import urllib.error
 
-DEFAULT_URL = "http://127.0.0.1:64342/stream"
+DEFAULT_URL = "http://127.0.0.1:64515/stream"
 DEFAULT_PROJECT = "C:/Users/63588/lenovo/ssg-sales-ops"
 _req_id = 0
 
