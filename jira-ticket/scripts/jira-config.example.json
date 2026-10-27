@@ -1,0 +1,20 @@
+{
+  "baseUrl": "https://jira.example.com",
+  "authType": "bearer",
+  "apiTokenEnv": "JIRA_API_TOKEN",
+  "apiToken": "",
+  "username": "",
+  "projectKey": "SSGAI",
+  "issueType": "Bug",
+  "assignee": "",
+  "reporter": "",
+  "priority": "",
+  "labels": "sdq-probe,auto",
+  "components": "",
+  "testPhaseField": "customfield_REPLACE_ME",
+  "testPhase": "Pre-Production Test",
+  "creationSourceField": "customfield_REPLACE_ME",
+  "creationSource": "AI Generated(Smart Sales AI tool)",
+  "bugCategoryField": "customfield_REPLACE_ME",
+  "bugCategory": ""
+}

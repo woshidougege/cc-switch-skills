@@ -1,0 +1,13 @@
+# Local skill credentials and runtime files
+**/scripts/jira-config.json
+
+# Temporary files
+.tmp/
+**/.tmp/
+.codex-tmp/
+**/.codex-tmp/
+
+# Python and logs
+__pycache__/
+*.py[cod]
+*.log
