@@ -1,3 +1,3 @@
 interface:
   display_name: "Codex 开发提效"
-  short_description: "用子 Agent 与 Codex 原生能力并行提效"
+  short_description: "上下文继承、子 Agent 并行与限时提效"

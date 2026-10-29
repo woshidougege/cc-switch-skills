@@ -6,7 +6,7 @@ Personal Codex Skills for discovery and update checks in CC Switch.
 
 - `dev-requirements`：通用开发硬规则，包含 PowerShell、文件/IDE 工具边界、worktree 和验证要求。
 - `ssg-sales-ops-branch-workflow`：SSG Sales Ops 前后端分支流程；后端 auth/admin 分服务选择 `auth-release`/`admin-release`，前端维护 `master`/`develop` 双独立 MR。
-- `codex-dev-efficiency`：复杂开发任务的子 Agent 并行、工具组合、集成和验收策略。
+- `codex-dev-efficiency`：通过主线程上下文继承、Context Packet、窄任务委派和子 Agent 并行缩短开发时间；普通任务不建 Goal、不自行设置 Token 上限。
 - `idea-mcp`：主工作区 IDEA 构建/运行/调试；worktree 使用 PowerShell `mvn`。
 - `jira-ticket`：Jira 查询、预览、提交和截图证据流程。
 - `weekly-daily-report`：Git 提交采集、日报 Excel 和周报生成。
