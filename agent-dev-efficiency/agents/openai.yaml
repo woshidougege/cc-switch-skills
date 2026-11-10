@@ -1,0 +1,3 @@
+interface:
+  display_name: "Agent 开发提效"
+  short_description: "上下文继承、≥2 子 Agent 并行与限时提效"
