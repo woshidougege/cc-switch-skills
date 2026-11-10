@@ -13,10 +13,10 @@
 - `ssg-sales-ops-branch-workflow`：SSG Sales Ops 前后端分支流程；后端 auth/admin 分服务选择 `auth-release`/`admin-release`，前端维护 `master`/`develop` 双独立 MR。
 - `weekly-daily-report`：Git 提交采集、日报 Excel 和周报生成。
 
-## 本地凭据文件（不入库）
+## 本地凭据文件
 
-- `external-llm-gateway/scripts/config.json`：含本机 API Key，已加入 `.gitignore`；使用时复制 `config.example.json` 填写。
-- `jira-ticket/scripts/jira-config.json`：同理，示例见 `jira-config.example.json`。
+- `external-llm-gateway/scripts/config.json`：已入库。Key 只对本机 `http://127.0.0.1:8788/v1` 有效，仓库仅本人使用。
+- `jira-ticket/scripts/jira-config.json`：不入库，示例见 `jira-config.example.json`。
 
 ## 同步方式
 

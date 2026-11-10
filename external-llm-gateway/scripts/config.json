@@ -1,0 +1,5 @@
+{
+  "base_url": "http://127.0.0.1:8788/v1",
+  "api_key": "0f60f86cfdf4f77173af1cd48af15f8bd544",
+  "note": "Key 只对本机 8788 有效，打不通 api.xiaomimimo.com。换 Key 只改这里；也可用环境变量 WORK_BUDDY_API_KEY / WB_GATEWAY_URL 覆盖。"
+}

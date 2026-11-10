@@ -1,6 +1,5 @@
 # Local skill credentials and runtime files
 **/scripts/jira-config.json
-external-llm-gateway/scripts/config.json
 
 # Temporary files
 .tmp/
