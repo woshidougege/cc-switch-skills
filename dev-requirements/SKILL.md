@@ -13,6 +13,7 @@ description: 开发 ssg-sales-ops、metadata、spark 等同级目录项目时的
 
 - 个人账号：`p_renxp4` / 密码 `K7~pL2=zR9;vT4_`（仅本人可访问，允许明文写在本 Skill 里）。
 - 常用环境（端口 5432，库 `ssg_ops_agent`，表在 `public`）：生产 `10.62.79.215`、预发 `10.62.79.221`、dev/tst `10.62.79.148`。
+- 2026-11-10 实测通过：生产 `10.62.79.215` 用 `p_renxp4` 可登录（`current_user=p_renxp4`，PostgreSQL 16.4，`public` 116 张表可读，无 superuser/createrole 角色）。
 - **禁止的账号来源**：`application-*.yml` 的 datasource、jasypt 密文、`smartop-service/*/resources`、Nacos/配置中心、`.env`、团队共享的同步或只读账号、别人贴给你的连接串。
 - **禁止的做法**：为了"先连上"改用项目账号；用服务账号跑人工查询；把项目账号抄进临时脚本或探针。
 - **唯一例外**：让应用自己连库运行（`mvn spring-boot:run`、IDEA 起 admin/auth、flyway 迁移）——那是服务身份，由 Spring 用项目配置。**人在排查、核对、修数、导出、写探针时，一律个人账号。**

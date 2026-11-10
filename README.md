@@ -5,7 +5,7 @@
 ## Included skills
 
 - `agent-dev-efficiency`：多步骤 Agent 任务提效策略；主线程先做最小侦察形成上下文包，只有拆得出互不依赖的子任务才并行委派，普通任务不建 Goal、不自行设 Token 上限。
-- `dev-requirements`：通用开发硬规则，包含 PowerShell、文件/IDE 工具边界、worktree 和验证要求。
+- `dev-requirements`：通用开发硬规则，包含 PowerShell、文件/IDE 工具边界、worktree、验证要求，以及数据库访问规则（PostgreSQL 一律用个人账号 `p_renxp4`，禁用项目 datasource 账号）。
 - `external-llm-gateway`：通过本机 WorkBuddy2API 网关调用外部大模型（付费调用需先说明模型与预估 Token）。
 - `frontend-design`：前端视觉设计方向、排版与去模板化规范。
 - `jira-ticket`：Jira 查询、预览、提交和截图证据流程。
