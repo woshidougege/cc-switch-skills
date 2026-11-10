@@ -1,11 +1,35 @@
 ---
 name: dev-requirements
-description: 开发 ssg-sales-ops、metadata、spark 等同级目录项目时的通用要求：中文、PowerShell、原生文件编辑、主工作区 IDEA MCP build、worktree 使用 mvn、临时文件入 .tmp、后端 auth/admin 分服务 MR、前端 master/develop 双 MR、真实浏览器验证。
+description: 开发 ssg-sales-ops、metadata、spark 等同级目录项目时的通用要求：中文、PowerShell、原生文件编辑、主工作区 IDEA MCP build、worktree 使用 mvn、临时文件入 .tmp、后端 auth/admin 分服务 MR、前端 master/develop 双 MR、真实浏览器验证；以及数据库硬规则——连 PostgreSQL 一律用个人账号 p_renxp4，禁止使用项目 datasource 账号密码。
 ---
 
 # 团队开发要求（通用）
 
 > 硬规则：`ssg-sales-ops` 的 auth 服务只投 `auth-release`，admin 服务只投 `admin-release`，两者是两个服务；前端同一改动必须从 `master`、`develop` 各自独立拉分支并分别提 MR，绝不互合环境分支。
+
+## 数据库访问（第 0 条硬规则）
+
+**连 PostgreSQL 一律用个人账号 `p_renxp4`，禁止使用项目里的数据库账号密码。违反即停止当前操作并向用户报告，不得自行找替代账号。**
+
+- 个人账号：`p_renxp4` / 密码 `K7~pL2=zR9;vT4_`（仅本人可访问，允许明文写在本 Skill 里）。
+- 常用环境（端口 5432，库 `ssg_ops_agent`，表在 `public`）：生产 `10.62.79.215`、预发 `10.62.79.221`、dev/tst `10.62.79.148`。
+- **禁止的账号来源**：`application-*.yml` 的 datasource、jasypt 密文、`smartop-service/*/resources`、Nacos/配置中心、`.env`、团队共享的同步或只读账号、别人贴给你的连接串。
+- **禁止的做法**：为了"先连上"改用项目账号；用服务账号跑人工查询；把项目账号抄进临时脚本或探针。
+- **唯一例外**：让应用自己连库运行（`mvn spring-boot:run`、IDEA 起 admin/auth、flyway 迁移）——那是服务身份，由 Spring 用项目配置。**人在排查、核对、修数、导出、写探针时，一律个人账号。**
+- 解出 jasypt 里的数据源密码只允许用于"判断服务为什么连不上"这类分析，不得拿去连库查询。
+- 个人账号权限不够时：明确报告缺哪张表/哪个 Schema/哪一列的权限，然后停下来等用户处理，**不得回退到项目账号**。
+
+### 连接写法（密码含 `~ = ; _`，必须按此处理）
+
+| 方式 | 正确写法 |
+|---|---|
+| psql | `$env:PGPASSWORD='K7~pL2=zR9;vT4_'` 然后 `psql -h 10.62.79.215 -p 5432 -U p_renxp4 -d ssg_ops_agent -c "..."`（PowerShell 用单引号，避免 `;` `~` 被解析） |
+| JDBC | `props.setProperty("user","p_renxp4")` + `props.setProperty("password","K7~pL2=zR9;vT4_")`，**禁止把账号密码拼进 JDBC URL**（`;` `=` 会破坏 URL 解析） |
+| Python (psycopg) | `psycopg.connect(host=..., dbname=..., user="p_renxp4", password=os.environ["PGPASSWORD"])` |
+| DataGrip / IDEA 数据库面板 | user = `p_renxp4`，密码直接粘，不要做 URL 编码 |
+
+执行任何 `psql` / JDBC / psycopg 之前先自检：连接参数里的 user 必须是 `p_renxp4`。日志和回复里不回显密码明文，用 `$env:PGPASSWORD` / 环境变量传递。
+
 
 ## 工具与文件
 
