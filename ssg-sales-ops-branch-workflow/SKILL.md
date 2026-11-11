@@ -41,9 +41,9 @@ git status --short --branch
 
 1. 前置检查：`git rev-parse --show-toplevel`、`git remote get-url origin`、`git status --short --branch`，确认仓库、当前分支和工作区状态。
 2. 选基线建分支：auth → `origin/auth-release`，admin → `origin/admin-release`，前端生产 → `origin/master`，前端 TST → `origin/develop`；先 `git fetch origin --prune`，再 `git switch -c feature/<topic>-<target> origin/<target>`。
-3. 实现并验证；提交信息先写入 `.tmp/commit-msg.txt`（UTF-8），再用 `git commit -F .tmp/commit-msg.txt`，不要用 bash heredoc。
+3. 实现并验证（验证分级见 `dev-requirements` 第 17–18 条：默认 type-check / build + 一次真实调用，浏览器验证默认不做）；提交信息先写入 `.tmp/commit-msg.txt`（UTF-8），再用 `git commit -F .tmp/commit-msg.txt`，不要用 bash heredoc。
 4. 前端第二个目标分支：先 `git stash push -m autogen -- components.d.ts`，再建分支并 `git cherry-pick <canonicalCommit>`；切分支失败时先清状态，不要继续 cherry-pick。
-5. 两条前端分支分别跑 `npm run type-check`，并用 `git patch-id --stable` 比对补丁 id。
+5. 两条前端分支分别跑 `npm run type-check`（放进**同一次 `run_code`** 里顺序跑完，各约 40s，不要分两步），并用 `git patch-id --stable` 比对补丁 id。
 6. 中文 MR 描述写入 `.tmp/mr-<target>-desc.md`（UTF-8 无 BOM），由 `.tmp/create-mr.ps1` 读取拼 JSON。
 7. 用 `git credential fill` 取 `gitlab.xpaas.lenovo.com` 的 token，POST `/api/v4/projects/{urlencoded path}/merge_requests`；409 时查询并复用已有 MR。
 8. 回查每个 MR 的 `state`、`merge_status`、`has_conflicts`，把链接和 target 回填给用户；合并、部署仍需单独授权。
@@ -193,7 +193,7 @@ git cherry-pick <canonicalCommit>
 - `--quit` 后如果仍有上一次 cherry-pick 带入的改动，先确认是保留还是丢弃，再重建分支。
 - 重建前确认同名分支不存在，避免 `git switch -c` 因分支已存在再次失败。
 
-第二个分支提交后同样跑 `npm run type-check` 并推送：
+第二个分支提交后同样跑 `npm run type-check`（可与第一分支的 type-check 合并到同一次 `run_code`）并推送：
 
 ```powershell
 git push -u origin feature/<topic>-develop
@@ -401,7 +401,7 @@ auth-release <-> admin-release
 - 两边最终 Patch ID 一致；提交 hash 可以不同。
 - 两边 MR 标题和描述一致。
 - 两个 MR 均可合并。
-- 在真实 Chrome 中验证笔记本、1K、2K 宽度；type-check/build 不能替代页面验证。
+- 页面验证按 `dev-requirements` 第 17–18 条分级：**默认只跑 `npm run type-check`，浏览器截图默认不做**；只有前端视觉/布局/响应式改动且用户明确要求时，才在真实 Chrome 截一个宽度（1440×900），用户没点名"三宽度"就不做 1920/2560。
 - 已确认没有执行 `develop -> master`、`master -> develop` 或其他环境分支整分支合并。
 - MR 可合并不等于授权合并或部署。
 
@@ -447,5 +447,5 @@ git diff origin/develop...feature/<topic>-develop | git patch-id --stable
 - `git status --short` 只应出现已知生成文件；`components.d.ts` 不应进入提交。
 - 两个 patch-id 第一列一致；不一致停止建/改 MR，先定位差异。
 - 三个 MR 回查 `state=opened`、`has_conflicts=False`；target 分别为 `master`、`develop`、`admin-release`（auth 服务为 `auth-release`）。
-- 每个 MR 的 `web_url` 已回填给用户；中文描述在浏览器中正常显示、长度非 0。
+- 每个 MR 的 `web_url` 已回填给用户；以 API 返回的 `description` 长度非 0 且中文正常为准，不必开浏览器去看。
 - 未执行任何合并、部署或生产动作。

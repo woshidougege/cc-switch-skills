@@ -171,7 +171,7 @@ POST /rest/api/2/issue/{key}/attachments
 X-Atlassian-Token: no-check
 ```
 
-- 提交后必须验证实际渲染：调用 `GET /rest/api/2/issue/{key}?expand=renderedFields` 检查描述或备注的 `renderedFields` 中图片可显示，再打开 Jira 页面确认关键信息可见。未验证成功时，不要声称截图已正确展示。
+- 提交后验证实际渲染：调用 `GET /rest/api/2/issue/{key}?expand=renderedFields`，确认描述或备注的 `renderedFields` 里图片链接存在且可渲染即可，**不要为此打开浏览器**（一次页面动作就是一整步）。只有用户明确要求看页面效果时才截图确认。未验证成功时，不要声称截图已正确展示。
 
 ## 共享给同事
 

@@ -1,6 +1,6 @@
 ---
 name: dev-requirements
-description: 开发 ssg-sales-ops、metadata、spark 等同级目录项目时的通用要求：中文、PowerShell、原生文件编辑、主工作区 IDEA MCP build、worktree 使用 mvn、临时文件入 .tmp、后端 auth/admin 分服务 MR、前端 master/develop 双 MR、真实浏览器验证；以及数据库硬规则——连 PostgreSQL 一律用个人账号 p_renxp4，禁止使用项目 datasource 账号密码。
+description: 开发 ssg-sales-ops、metadata、spark 等同级目录项目时的通用要求：中文、PowerShell、原生文件编辑、主工作区 IDEA MCP build、worktree 使用 mvn、临时文件入 .tmp、后端 auth/admin 分服务 MR、前端 master/develop 双 MR、验证分级（非必要不开浏览器，默认不做页面验证）；以及数据库硬规则——连 PostgreSQL 一律用个人账号 p_renxp4，禁止使用项目 datasource 账号密码。
 ---
 
 # 团队开发要求（通用）
@@ -64,9 +64,16 @@ description: 开发 ssg-sales-ops、metadata、spark 等同级目录项目时的
 14. 开发完提 MR，描述写清改动和原因。创建 MR 可按任务执行；合并、部署、发布或触发生产动作必须获得用户明确授权。
 15. `git commit` 不加任何 AI 署名（无 Co-Authored-By / Codex 之类）。
 16. 本地联调/开发者模式代码绝不提交：如 `vite.config.ts` 里的开发者 user 头、`.env.*.local`、本地 profile 等，否则会影响所有使用者。
-17. UI 改动不能只靠 type-check/build；按项目 Skill 在真实 Chrome 中验证笔记本、1K、2K 宽度，默认优先 TST，除非用户明确只做本地验证。
+17. **非必要不开浏览器。** `bsk_*` 是最贵的一类工具——一次页面动作就占一个 step，一个 step 8–15 秒。本机 2026-11-09~11 三天实测：4333 次浏览器调用、1574 个 step、合计 6h17m，占全部 step 的 17%、墙钟的 13%，个别轮次超过 40%；单是 `bsk_session` 就被调了 1956 次。所以浏览器不是"验证手段之一"，是**最后一档手段**。按改动类型取最小够用的一组：
+    - 后端逻辑 / 接口 / DAO / SQL：IDEA build 或 `mvn -q compile` + 目标接口真实调用一次；不启浏览器。
+    - 纯文案 / 权限 key / 常量 / 配置：只跑 `npm run type-check`；不 build、不截图。
+    - 前端逻辑（不改样式）：`type-check` + 目标页面加载一次，确认无 console error 即可。
+    - 前端视觉 / 布局 / 响应式：`type-check` 仍必做；**浏览器截图默认不做**，仅当用户明确要求，或改动涉及栅格/断点/多分辨率且无法用 DOM 文本判断时才做。
+    开浏览器前必须同时满足三条：① 用户明确要求或点名要看；② 无法用 type-check / build / DOM 文本 / 接口返回判断；③ 动作能压进一次 `run_code` 批量取证。任一条不满足就不开。
+    开了就控制步数：一次验证 ≤10 个浏览器 step，超过说明是在用步数换确定性，停下来合并。
+18. 确实需要页面验证时：只验一个宽度（1440×900）；用户没点名"三宽度"就不做 1920/2560。一次验证放进一次 `run_code` 批量取证（开页面 → 连点 → 连截 → 读 console/network），禁止"点一下截一张"各占一步。默认优先 TST，除非用户明确只做本地验证。
 
 ## 部署与联调
 
-18. 部署很麻烦：能热部署就优先热部署触发，实在不行才重启本地服务。
-19. 热部署/启动完成后，再做联调验证；检查原始日志和业务结果，不能只看“请求成功”。
+19. 部署很麻烦：能热部署就优先热部署触发，实在不行才重启本地服务。
+20. 热部署/启动完成后，再做联调验证；检查原始日志和业务结果，不能只看“请求成功”。
