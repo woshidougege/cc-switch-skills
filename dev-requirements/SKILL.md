@@ -1,6 +1,6 @@
 ---
 name: dev-requirements
-description: 开发 ssg-sales-ops、metadata、spark 等同级目录项目时的通用要求：中文、PowerShell、原生文件编辑、主工作区 IDEA MCP build、worktree 使用 mvn、临时文件入 .tmp、后端 auth/admin 分服务 MR、前端 master/develop 双 MR、验证分级（非必要不开浏览器，默认不做页面验证）；以及数据库硬规则——连 PostgreSQL 一律用个人账号 p_renxp4，禁止使用项目 datasource 账号密码。
+description: 开发 ssg-sales-ops、metadata、spark 等同级目录项目时的通用要求：中文、PowerShell、原生文件编辑、主工作区 IDEA MCP build、worktree 使用 mvn、临时文件入 .tmp、后端 auth/admin 分服务 MR、前端 master/develop 双 MR、验证分级（非必要不开浏览器，默认不做页面验证）；以及数据库硬规则——默认个人账号 p_renxp4，服务账号 a_appconnect 必须逐次申请（各环境的服务账号明文密码已写在 Skill 内，不必再解 jasypt）。
 ---
 
 # 团队开发要求（通用）
@@ -9,28 +9,53 @@ description: 开发 ssg-sales-ops、metadata、spark 等同级目录项目时的
 
 ## 数据库访问（第 0 条硬规则）
 
-**连 PostgreSQL 一律用个人账号 `p_renxp4`，禁止使用项目里的数据库账号密码。违反即停止当前操作并向用户报告，不得自行找替代账号。**
+**平时一律用个人账号 `p_renxp4`；服务账号 `a_appconnect` 每次使用前必须单独申请，用户明确同意后才能连。下面已经把各环境服务账号密码解好写着，不要再自己去解 jasypt。**
 
-- 个人账号：`p_renxp4` / 密码 `K7~pL2=zR9;vT4_`（仅本人可访问，允许明文写在本 Skill 里）。
-- 常用环境（端口 5432，库 `ssg_ops_agent`，表在 `public`）：生产 `10.62.79.215`、预发 `10.62.79.221`、dev/tst `10.62.79.148`。
-- 2026-11-10 实测通过：生产 `10.62.79.215` 用 `p_renxp4` 可登录（`current_user=p_renxp4`，PostgreSQL 16.4，`public` 116 张表可读，无 superuser/createrole 角色）。
-- **禁止的账号来源**：`application-*.yml` 的 datasource、jasypt 密文、`smartop-service/*/resources`、Nacos/配置中心、`.env`、团队共享的同步或只读账号、别人贴给你的连接串。
-- **禁止的做法**：为了"先连上"改用项目账号；用服务账号跑人工查询；把项目账号抄进临时脚本或探针。
-- **唯一例外**：让应用自己连库运行（`mvn spring-boot:run`、IDEA 起 admin/auth、flyway 迁移）——那是服务身份，由 Spring 用项目配置。**人在排查、核对、修数、导出、写探针时，一律个人账号。**
-- 解出 jasypt 里的数据源密码只允许用于"判断服务为什么连不上"这类分析，不得拿去连库查询。
-- 个人账号权限不够时：明确报告缺哪张表/哪个 Schema/哪一列的权限，然后停下来等用户处理，**不得回退到项目账号**。
+### 账号、权限与申请
 
-### 连接写法（密码含 `~ = ; _`，必须按此处理）
+| 账号 | 身份 | 什么时候能用 |
+|---|---|---|
+| `p_renxp4` / `K7~pL2=zR9;vT4_` | 个人账号 | **默认全用它**：排查、核对、修数、导出、写探针、只读分析 |
+| `a_appconnect` / 见下表 | 项目服务账号（应用 datasource 身份） | **必须先申请**：回复里写清 ①哪套环境 ②为什么个人账号不够（缺对象权限 / 要复现服务侧行为 / 验证权限或 RLS）③要跑什么范围，等用户明确同意（"可以 / 同意 / 用吧"）后才连 |
+| 应用自己启动（`mvn spring-boot:run`、IDEA 起 admin/auth、flyway） | Spring 用项目配置 | 不需要申请，这是服务自身行为，不是人工连库 |
+
+- 未经同意用 `a_appconnect` 查任何东西 = 违规，立刻停手并报告。
+- 个人账号权限不够时先报告缺哪张表/哪个 schema/哪一列，**不许**为了推进任务私自换成服务账号。
+- 服务账号用完即弃：不写进临时脚本、`.env`、探针类，不保留长连接。
+- 服务账号跑过的写操作（UPDATE/DELETE/DDL）必须先给语句预览并拿到确认，只读也一样要先说清用途。
+
+### 服务账号明文密码（已解密，直接用）
+
+| 环境 | 地址 | 库 | 账号 | 密码 | 出处 |
+|---|---|---|---|---|---|
+| 生产 | `10.62.79.215:5432` | ssg_ops_agent | a_appconnect | `sIN0dTD%Js56` | admin、auth 各自的 `application-lmp-*-prod.yml`（原文 `ENC(hb7JlW3K/RyADKFniNrPeJvrqnIgSMcj)`） |
+| 预发 | `10.62.79.221:5432` | ssg_ops_agent | a_appconnect | `xhZt31tTr#Hz` | `application-lmp-*-pre.yml`、`admin/application-lmp-sy-dev.yml`（明文） |
+| tst / dev | `10.62.79.148:5432` | ssg_ops_agent | a_appconnect | `VK0C:XFWf8RV` | `application-lmp-*-tst.yml`、`reston-dev.yml`（明文） |
+| sy-dev(196) | `10.196.155.93:5432` | ops_agent | a_appconnect | `GjYE%NUOW3lH` | `auth/application-lmp-sy-dev.yml`（明文） |
+
+**实测（2026-11-12）**：生产 / 预发 / tst 三套用上表密码均登录成功（`current_user=a_appconnect`、`current_database=ssg_ops_agent`），生产明文与密文解出来的一致，可直接用。
+
+### 其他连接（同一份配置，同样已解密）
+
+| 用途 | 地址 | 账号 | 密码 |
+|---|---|---|---|
+| LUDP Trino 源（Trino→PG 定时同步的 SOURCE） | `pbi-presto-row.ludp.lenovo.com:443` / hive | `p49_g1189` | `Ai_portal@@` |
+| LUDP keystore（SSL） | `classpath:keystore/ludp-row-prd-keystore.jks` | — | `abcd-1234` |
+
+### 真需要解新密文时（一般用不上）
+
+`jasypt.encryptor.password=2c8d34a64e38ade6ba2c7441caf32377`，algorithm `PBEWithMD5AndDES`，iv `NoIvGenerator`；用 `~/.m2/repository/org/jasypt/jasypt/1.9.3/jasypt-1.9.3.jar` 的 `StandardPBEStringEncryptor`（`setPassword`+`setAlgorithm`+`setIvGenerator(new NoIvGenerator())`）解即可。**不要再为此现查现试**。
+
+### 连接写法（密码含 `~ = ; _ % :`，必须按此处理）
 
 | 方式 | 正确写法 |
 |---|---|
-| psql | `$env:PGPASSWORD='K7~pL2=zR9;vT4_'` 然后 `psql -h 10.62.79.215 -p 5432 -U p_renxp4 -d ssg_ops_agent -c "..."`（PowerShell 用单引号，避免 `;` `~` 被解析） |
-| JDBC | `props.setProperty("user","p_renxp4")` + `props.setProperty("password","K7~pL2=zR9;vT4_")`，**禁止把账号密码拼进 JDBC URL**（`;` `=` 会破坏 URL 解析） |
+| psql | `$env:PGPASSWORD='K7~pL2=zR9;vT4_'`（服务账号同理换密码）后再 `psql -h 10.62.79.215 -p 5432 -U p_renxp4 -d ssg_ops_agent -c "..."`；PowerShell 必须单引号，否则 `;` `~` `%` 会被解析 |
+| JDBC | `props.setProperty("user","p_renxp4")` + `props.setProperty("password","K7~pL2=zR9;vT4_")`，**禁止把账号密码拼进 JDBC URL**（`;` `=` `%` `:` 都会破坏 URL 解析） |
 | Python (psycopg) | `psycopg.connect(host=..., dbname=..., user="p_renxp4", password=os.environ["PGPASSWORD"])` |
-| DataGrip / IDEA 数据库面板 | user = `p_renxp4`，密码直接粘，不要做 URL 编码 |
+| DataGrip / IDEA 数据库面板 | user 填账号，密码直接粘，不要 URL 编码 |
 
-执行任何 `psql` / JDBC / psycopg 之前先自检：连接参数里的 user 必须是 `p_renxp4`。日志和回复里不回显密码明文，用 `$env:PGPASSWORD` / 环境变量传递。
-
+执行任何 `psql` / JDBC / psycopg 之前自检两件事：① user 是 `p_renxp4`，或 ② user 是 `a_appconnect` 且本轮已经拿到用户同意。日志和回复里不回显密码明文，用 `$env:PGPASSWORD` / 环境变量传递。
 
 ## 工具与文件
 
