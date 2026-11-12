@@ -1,6 +1,6 @@
 ---
 name: dev-requirements
-description: 开发 ssg-sales-ops、metadata、spark 等同级目录项目时的通用要求：中文、PowerShell、原生文件编辑、主工作区 IDEA MCP build、worktree 使用 mvn、临时文件入 .tmp、后端 auth/admin 分服务 MR、前端 master/develop 双 MR、验证分级（非必要不开浏览器，默认不做页面验证）；以及数据库硬规则——默认个人账号 p_renxp4，服务账号 a_appconnect 必须逐次申请（各环境的服务账号明文密码已写在 Skill 内，不必再解 jasypt）。
+description: 开发 ssg-sales-ops、metadata、spark 等同级目录项目时的通用要求：中文、PowerShell、原生文件编辑、主工作区 IDEA MCP build、worktree 使用 mvn、临时文件入 .tmp、后端 auth/admin 分服务 MR、前端 master/develop 双 MR、验证分级（非必要不开浏览器，默认不做页面验证）；worktree 构建用 `-o -T 4` 且别带 `-am`（实测 52s→28s）；以及数据库硬规则——默认个人账号 p_renxp4，服务账号 a_appconnect 必须逐次申请（各环境的服务账号明文密码已写在 Skill 内，不必再解 jasypt）。
 ---
 
 # 团队开发要求（通用）
@@ -65,6 +65,64 @@ description: 开发 ssg-sales-ops、metadata、spark 等同级目录项目时的
 4. 构建按工作区选择：主工作区优先当前会话可发现的 native IDE MCP build，失败后再用 `idea-mcp` wrapper；worktree 无法可靠调用 IDEA，必须使用 PowerShell 执行 `mvn`。不要在 worktree 中等待 IDEA。
 5. 临时脚本、描述、截图中间件写入 git 忽略的 `.tmp/`，完成后清理，不散落在仓库。
 6. 涉及用户可见的主工作区/worktree 切换时必须先征得确认。子 Agent 的内部隔离由当前 Codex 环境管理，不额外等同于切换用户主工作区。
+
+## 后端构建提速（worktree 里跑 mvn）
+
+2026-11-12 在 `ssg-sales-ops-wt-deep`（8C/16T，`.m2` 已热）实测，命令都是 `-o -q -DskipTests compile`：
+
+| 写法 | 耗时 |
+|---|---|
+| `-pl smartop-service/admin -am`（默认写法） | 51.8s |
+| 同样再来一次（零改动） | 61.6s |
+| `-T 1C` | 40.8s |
+| `-T 4` | 33.8s |
+| 只编 admin（不带 `-am`） | 33.8s |
+| **只编 admin + `-T 4`** | **27.8s** |
+| 全 reactor | 93.9s |
+
+单次 26s 的构成（admin-only，逐行打时间戳实测）：
+
+| 阶段 | 耗时 |
+|---|---|
+| JVM + mvn 启动 | ~3s |
+| 扫描工程 / 建模型（`validate` 单跑只要 4.1s） | ~1s |
+| 依赖收集 | ~8s |
+| 插件 / mojo 初始化 | ~8.7s |
+| 拷贝 162 个资源 | ~1.3s |
+| `compiler:compile`（输出还是 "Nothing to compile"） | ~4.9s |
+
+**结论：编译本身只占 5s，其余 20s 是 Maven 每次冷启动的固定成本。**所以"上缓存插件"省不下来，方向错了。
+
+### 默认这么跑
+
+```powershell
+$env:JAVA_HOME='C:\Program Files\Java\jdk-17.0.19'
+$mvn='C:\Program Files\JetBrains\IntelliJ IDEA 2026.1.3\plugins\maven-plugin\lib\maven3\bin\mvn.cmd'
+& $mvn -o -q -T 4 -pl smartop-service/admin -DskipTests compile
+```
+
+- 只改 admin 就**不要** `-am`（带 `-am` 多花 ~18s）；改了 `smartop-api` / `smartop-common*` / `smartop-component*` 才加。
+- `-o` 必带（离线，跳过远端元数据检查）；`-T 4` 比 `-T 1C` 在本机更稳。
+- 永不 `clean`；`-Dmaven.test.skip=true` 实测无收益（55.3s vs 51.8s）。
+- **不要**用 `-Dmaven.resources.skip=true`：实测直接 exit=1。
+- 纯验证只做到 `compile`，不要动不动 `package`。
+- 单测：`-pl smartop-service/admin -am test`（admin 必须带 `-am`，否则拿到 `.m2` 里旧的 `smartop-api` 编译失败）。
+
+### 缓存插件实测：别引入
+
+`maven-build-cache-extension:1.3.0`（`.mvn/extensions.xml` + `-Dmaven.build.cache.enabled=true`）：
+
+| 场景 | 耗时 |
+|---|---|
+| 冷跑（建缓存） | 67.4s |
+| 热跑（同一份代码） | 69.5s |
+| 清空所有模块 `target` 后 | 56.3s |
+
+全部不如裸跑（51.8s）：每模块编译量太小，算哈希 + 存取缓存反而多花 ~15s。已实测否掉。
+
+### 真想再快
+
+只有消灭"每次起 JVM"这一条路：`mvnd`（Maven Daemon，常驻进程，第二次起一般 3–6s）。本机当前没装，且下载通道被代理挡（central 的 `org/mvndaemon` 404、dlcdn SSL 失败）。要上得先解决下载。
 
 ## 分支与 MR
 
